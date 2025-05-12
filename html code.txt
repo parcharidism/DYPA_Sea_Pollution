@@ -1,0 +1,161 @@
+<div class="pollution-wrapper">
+  <div id="pollution-controls">
+    <div class="control-group">
+      <label><strong>Scoring</strong></label>
+      <div class="score-radio">
+        <label><input type="radio" name="scoreType" value="soft" checked> Soft</label>
+        <label><input type="radio" name="scoreType" value="hard"> Hard</label>
+      </div>
+    </div>
+    <div class="control-group">
+      <label><strong>Select measurement date</strong></label>
+      <select id="dateSelect"></select>
+    </div>
+    <div class="control-group">
+      <label><strong>Pollution score</strong></label>
+      <div id="score-panel" class="score-button">N/A</div>
+      <div class="score-legend">Low: 0–3, Moderate: 4–7, High: 8+</div>
+    </div>
+  </div>
+  <div id="pollution-map" style="height: 500px;"></div>
+</div>
+
+<!-- LEAFLET + HEATMAP -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+
+<!-- STYLES -->
+<style>
+  #pollution-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1em;
+    align-items: flex-start;
+    margin-bottom: 1em;
+  }
+  .control-group { display: flex; flex-direction: column; gap: 0.2em; }
+  .score-radio label { display: block; }
+  .score-button {
+    display: inline-block;
+    padding: 0.4em 1em;
+    font-weight: bold;
+    color: white;
+    border-radius: 5px;
+    text-align: center;
+    min-width: 120px;
+  }
+  .score-low {
+    background-color: #2ecc71;
+  }
+  .score-moderate {
+    background-color: #f39c12;
+  }
+  .score-high {
+    background-color: #e74c3c;
+  }
+  .score-legend {
+    font-size: 0.9em;
+    color: #666;
+  }
+</style>
+
+<!-- SCRIPT -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const map = L.map("pollution-map").setView([40.63, 22.94], 14);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; OpenStreetMap contributors"
+  }).addTo(map);
+
+  const fileUrl = "http://172.16.64.205:8080/wp-content/uploads/2025/04/pollution_scores.json";
+  let allData = [];
+  let heatLayer;
+  window.markers = [];
+
+  fetch(fileUrl).then(r => r.json()).then(data => {
+    allData = data;
+    populateDateDropdown();
+    updateMap();
+  });
+
+  function populateDateDropdown() {
+    const select = document.getElementById("dateSelect");
+    const dates = [...new Set(allData.map(d => `${d.year}-${String(d.month).padStart(2, '0')}`))].sort();
+    dates.forEach(d => {
+      const opt = document.createElement("option");
+      opt.value = d;
+      opt.text = d.replace("-", " / ");
+      select.appendChild(opt);
+    });
+  }
+
+  function updateMap() {
+    const scoreType = document.querySelector('input[name="scoreType"]:checked').value;
+    const selectedDate = document.getElementById("dateSelect").value;
+    const [year, month] = selectedDate.split("-").map(Number);
+    const filtered = allData.filter(d => d.year === year && d.month === month);
+
+    const heatData = filtered.map(d => [
+      d.lat,
+      d.lon,
+      Math.min((scoreType === "hard" ? d.hard_score : d.soft_score) / 15, 1)
+    ]);
+
+    if (heatLayer) heatLayer.remove();
+    heatLayer = L.heatLayer(heatData, {
+      radius: 25,
+      blur: 15,
+      maxZoom: 10
+    }).addTo(map);
+
+    // Remove old markers
+    window.markers.forEach(m => map.removeLayer(m));
+    window.markers = [];
+
+    // Add new markers with popups
+    filtered.forEach(d => {
+      const score = scoreType === "hard" ? d.hard_score : d.soft_score;
+      const popup = `Lat: ${d.lat.toFixed(4)}, Lon: ${d.lon.toFixed(4)}<br>Score: ${score}`;
+      const marker = L.circleMarker([d.lat, d.lon], {
+        radius: 4,
+        color: "#333",
+        fillColor: "#555",
+        fillOpacity: 0.7
+      }).bindPopup(popup);
+      marker.addTo(map);
+      window.markers.push(marker);
+    });
+
+    updateScorePanel(filtered, scoreType);
+  }
+
+  function updateScorePanel(data, type) {
+    const scoreBox = document.getElementById("score-panel");
+    scoreBox.classList.remove("score-low", "score-moderate", "score-high");
+
+    if (!data.length) {
+      scoreBox.textContent = "N/A";
+      scoreBox.style.color = "gray";
+      return;
+    }
+    const scores = data.map(d => type === "hard" ? d.hard_score : d.soft_score);
+    const avg = (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1);
+
+    const num = parseFloat(avg);
+    if (num >= 8) {
+      scoreBox.classList.add("score-high");
+      scoreBox.textContent = `High (${avg})`;
+    } else if (num >= 4) {
+      scoreBox.classList.add("score-moderate");
+      scoreBox.textContent = `Moderate (${avg})`;
+    } else {
+      scoreBox.classList.add("score-low");
+      scoreBox.textContent = `Low (${avg})`;
+    }
+  }
+
+  document.getElementById("dateSelect").addEventListener("change", updateMap);
+  document.querySelectorAll('input[name="scoreType"]').forEach(r => r.addEventListener("change", updateMap));
+});
+</script>
