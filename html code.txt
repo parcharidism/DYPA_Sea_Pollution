@@ -1,99 +1,152 @@
-<div class="pollution-wrapper">
-  <div id="pollution-controls">
-    <div class="control-group">
+<!-- POLLUTION CONTROLS AND MAP -->
+<div class="pollution-wrapper" style="max-width: 1000px; margin: auto;">
+  <div id="pollution-controls" style="display: flex; flex-wrap: wrap; gap: 1em; align-items: flex-start; margin-bottom: 1em;">
+    <div class="control-group" style="flex: 1 1 200px;">
       <label><strong>Scoring</strong></label>
       <div class="score-radio">
         <label><input type="radio" name="scoreType" value="soft" checked> Soft</label>
         <label><input type="radio" name="scoreType" value="hard"> Hard</label>
       </div>
     </div>
-    <div class="control-group">
-      <label><strong>Select measurement date</strong></label>
-      <select id="dateSelect"></select>
+
+    <div class="control-group" style="flex: 2 1 300px; position: relative;">
+      <label><strong>Select measurement date(s)</strong></label>
+      <div id="dropdown-container" style="position: relative;">
+        <button id="dropdown-toggle" style="width: 100%;">Choose dates ▼</button>
+        <div id="dropdown-list" class="dropdown-list" style="position: absolute; display: none; background: white; border: 1px solid #ccc; width: 100%; max-height: 200px; overflow-y: auto; z-index: 9999;"></div>
+      </div>
+      <div style="margin-top: 0.5em; display: flex; gap: 1em;">
+        <button id="compareButton" style="display: none;">Compare</button>
+        <button id="resetButton" style="display: none;">Reset</button>
+      </div>
     </div>
-    <div class="control-group">
+
+    <div class="control-group" style="flex: 1 1 200px;">
       <label><strong>Pollution score</strong></label>
-      <div id="score-panel" class="score-button">N/A</div>
-      <div class="score-legend">Low: 0–3, Moderate: 4–7, High: 8+</div>
+      <div id="score-panel" class="score-button" style="padding: 0.4em 1em; font-weight: bold; color: white; border-radius: 5px; text-align: center; min-width: 120px;">N/A</div>
+      <div class="score-legend" style="font-size: 0.9em; color: #666;">Low: 0–3, Moderate: 4–7, High: 8+</div>
     </div>
   </div>
-  <div id="pollution-map" style="height: 500px;"></div>
+
+  <div id="slider-wrapper" style="display: none; width: 100%; margin: 1em 0;">
+    <label><strong>Showing data for:</strong> <span id="currentDateLabel">N/A</span></label>
+    <input type="range" id="dateSlider" min="0" max="3" step="1" style="width: 100%;">
+    <div id="slider-labels" style="display: flex; justify-content: space-between; font-size: 0.85em; margin-top: 0.3em;"></div>
+  </div>
+
+  <div id="pollution-map" style="height: 500px; z-index: 1;"></div>
 </div>
 
-<!-- LEAFLET + HEATMAP -->
+<!-- STYLES -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
-
-<!-- STYLES -->
-<style>
-  #pollution-controls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1em;
-    align-items: flex-start;
-    margin-bottom: 1em;
-  }
-  .control-group { display: flex; flex-direction: column; gap: 0.2em; }
-  .score-radio label { display: block; }
-  .score-button {
-    display: inline-block;
-    padding: 0.4em 1em;
-    font-weight: bold;
-    color: white;
-    border-radius: 5px;
-    text-align: center;
-    min-width: 120px;
-  }
-  .score-low {
-    background-color: #2ecc71;
-  }
-  .score-moderate {
-    background-color: #f39c12;
-  }
-  .score-high {
-    background-color: #e74c3c;
-  }
-  .score-legend {
-    font-size: 0.9em;
-    color: #666;
-  }
-</style>
-
-<!-- SCRIPT -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-  const map = L.map("pollution-map").setView([40.63, 22.94], 14);
+  const dropdownToggle = document.getElementById("dropdown-toggle");
+  const dropdownList = document.getElementById("dropdown-list");
+  const compareBtn = document.getElementById("compareButton");
+  const resetBtn = document.getElementById("resetButton");
+  const sliderWrapper = document.getElementById("slider-wrapper");
+  const slider = document.getElementById("dateSlider");
+  const sliderLabels = document.getElementById("slider-labels");
+  const currentDateLabel = document.getElementById("currentDateLabel");
+  const scorePanel = document.getElementById("score-panel");
+
+  const map = L.map("pollution-map").setView([40.64, 22.94], 13);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "&copy; OpenStreetMap contributors"
   }).addTo(map);
 
-  const fileUrl = "http://172.16.64.205:8080/wp-content/uploads/2025/04/pollution_scores.json";
   let allData = [];
+  let selectedDates = [];
   let heatLayer;
   window.markers = [];
 
-  fetch(fileUrl).then(r => r.json()).then(data => {
-    allData = data;
-    populateDateDropdown();
-    updateMap();
+  fetch("http://172.16.64.205:8080/wp-content/uploads/2025/04/pollution_scores.json")
+    .then(res => res.json())
+    .then(data => {
+      allData = data;
+      const dates = [...new Set(data.map(d => d.year + "-" + String(d.month).padStart(2, '0')))].sort();
+      renderDropdown(dates);
+      updateMap(dates[0]);
+    });
+
+  dropdownToggle.addEventListener("click", () => {
+    dropdownList.style.display = dropdownList.style.display === "block" ? "none" : "block";
   });
 
-  function populateDateDropdown() {
-    const select = document.getElementById("dateSelect");
-    const dates = [...new Set(allData.map(d => `${d.year}-${String(d.month).padStart(2, '0')}`))].sort();
-    dates.forEach(d => {
-      const opt = document.createElement("option");
-      opt.value = d;
-      opt.text = d.replace("-", " / ");
-      select.appendChild(opt);
+  function renderDropdown(dates) {
+    dropdownList.innerHTML = "";
+    dates.forEach(date => {
+      const label = document.createElement("label");
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.value = date;
+      checkbox.addEventListener("change", () => handleCheckboxChange(checkbox));
+      label.appendChild(checkbox);
+      label.appendChild(document.createTextNode(date.replace("-", " / ")));
+      dropdownList.appendChild(label);
     });
   }
 
-  function updateMap() {
+  function handleCheckboxChange(checkbox) {
+    const value = checkbox.value;
+    if (checkbox.checked) {
+      if (selectedDates.length >= 4) {
+        checkbox.checked = false;
+        return;
+      }
+      selectedDates.push(value);
+    } else {
+      selectedDates = selectedDates.filter(d => d !== value);
+    }
+
+    selectedDates.sort();
+
+    compareBtn.style.display = (selectedDates.length >= 2 && selectedDates.length <= 4) ? "inline-block" : "none";
+    resetBtn.style.display = selectedDates.length > 0 ? "inline-block" : "none";
+
+    if (selectedDates.length === 1) {
+      sliderWrapper.style.display = "none";
+      updateMap(selectedDates[0]);
+    }
+  }
+
+  compareBtn.addEventListener("click", () => {
+    sliderWrapper.style.display = "block";
+    slider.max = selectedDates.length - 1;
+    slider.value = 0;
+    sliderLabels.innerHTML = "";
+    selectedDates.forEach(date => {
+      const span = document.createElement("span");
+      span.textContent = date.replace("-", " / ");
+      sliderLabels.appendChild(span);
+    });
+    currentDateLabel.textContent = selectedDates[0].replace("-", " / ");
+    updateMap(selectedDates[0]);
+
+    slider.oninput = () => {
+      const index = parseInt(slider.value);
+      const selected = selectedDates[index];
+      currentDateLabel.textContent = selected.replace("-", " / ");
+      updateMap(selected);
+    };
+  });
+
+  resetBtn.addEventListener("click", () => {
+    selectedDates = [];
+    sliderWrapper.style.display = "none";
+    compareBtn.style.display = "none";
+    resetBtn.style.display = "none";
+    [...dropdownList.querySelectorAll("input[type='checkbox']")].forEach(cb => cb.checked = false);
+    clearMap();
+    scorePanel.textContent = "N/A";
+  });
+
+  function updateMap(dateString) {
     const scoreType = document.querySelector('input[name="scoreType"]:checked').value;
-    const selectedDate = document.getElementById("dateSelect").value;
-    const [year, month] = selectedDate.split("-").map(Number);
+    const [year, month] = dateString.split("-").map(Number);
     const filtered = allData.filter(d => d.year === year && d.month === month);
 
     const heatData = filtered.map(d => [
@@ -104,24 +157,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (heatLayer) heatLayer.remove();
     heatLayer = L.heatLayer(heatData, {
-      radius: 25,
-      blur: 15,
-      maxZoom: 10
+      radius: 25, blur: 15, maxZoom: 10
     }).addTo(map);
 
-    // Remove old markers
     window.markers.forEach(m => map.removeLayer(m));
     window.markers = [];
 
-    // Add new markers with popups
     filtered.forEach(d => {
       const score = scoreType === "hard" ? d.hard_score : d.soft_score;
-      const popup = `Lat: ${d.lat.toFixed(4)}, Lon: ${d.lon.toFixed(4)}<br>Score: ${score}`;
+      const popup = "Lat: " + d.lat.toFixed(4) + ", Lon: " + d.lon.toFixed(4) + "<br>Score: " + score;
       const marker = L.circleMarker([d.lat, d.lon], {
-        radius: 4,
-        color: "#333",
-        fillColor: "#555",
-        fillOpacity: 0.7
+        radius: 4, color: "#333", fillColor: "#555", fillOpacity: 0.7
       }).bindPopup(popup);
       marker.addTo(map);
       window.markers.push(marker);
@@ -130,32 +176,38 @@ document.addEventListener("DOMContentLoaded", function () {
     updateScorePanel(filtered, scoreType);
   }
 
-  function updateScorePanel(data, type) {
-    const scoreBox = document.getElementById("score-panel");
-    scoreBox.classList.remove("score-low", "score-moderate", "score-high");
+  function clearMap() {
+    if (heatLayer) heatLayer.remove();
+    window.markers.forEach(m => map.removeLayer(m));
+    window.markers = [];
+  }
 
+  function updateScorePanel(data, type) {
+    scorePanel.classList.remove("score-low", "score-moderate", "score-high");
     if (!data.length) {
-      scoreBox.textContent = "N/A";
-      scoreBox.style.color = "gray";
+      scorePanel.textContent = "N/A";
+      scorePanel.style.color = "gray";
       return;
     }
     const scores = data.map(d => type === "hard" ? d.hard_score : d.soft_score);
     const avg = (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1);
-
     const num = parseFloat(avg);
     if (num >= 8) {
-      scoreBox.classList.add("score-high");
-      scoreBox.textContent = `High (${avg})`;
+      scorePanel.classList.add("score-high");
+      scorePanel.textContent = "High (" + avg + ")";
     } else if (num >= 4) {
-      scoreBox.classList.add("score-moderate");
-      scoreBox.textContent = `Moderate (${avg})`;
+      scorePanel.classList.add("score-moderate");
+      scorePanel.textContent = "Moderate (" + avg + ")";
     } else {
-      scoreBox.classList.add("score-low");
-      scoreBox.textContent = `Low (${avg})`;
+      scorePanel.classList.add("score-low");
+      scorePanel.textContent = "Low (" + avg + ")";
     }
   }
 
-  document.getElementById("dateSelect").addEventListener("change", updateMap);
-  document.querySelectorAll('input[name="scoreType"]').forEach(r => r.addEventListener("change", updateMap));
+  document.querySelectorAll('input[name="scoreType"]').forEach(r =>
+    r.addEventListener("change", () => {
+      if (selectedDates.length === 1) updateMap(selectedDates[0]);
+    })
+  );
 });
 </script>
