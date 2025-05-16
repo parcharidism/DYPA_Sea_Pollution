@@ -1,4 +1,3 @@
-<!-- POLLUTION CONTROLS AND MAP -->
 <div class="pollution-wrapper" style="max-width: 1000px; margin: auto;">
   <div id="pollution-controls" style="display: flex; flex-wrap: wrap; gap: 1em; align-items: flex-start; margin-bottom: 1em;">
     <div class="control-group" style="flex: 1 1 200px;">
@@ -34,15 +33,17 @@
     <div id="slider-labels" style="display: flex; justify-content: space-between; font-size: 0.85em; margin-top: 0.3em;"></div>
   </div>
 
-  <div id="pollution-map" style="height: 500px; z-index: 1;"></div>
+  <div id="pollution-map" style="height: 500px; min-height: 500px; z-index: 1; border: 2px dashed #aaa;"></div>
 </div>
 
 <!-- STYLES -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+
   const dropdownToggle = document.getElementById("dropdown-toggle");
   const dropdownList = document.getElementById("dropdown-list");
   const compareBtn = document.getElementById("compareButton");
@@ -54,6 +55,9 @@ document.addEventListener("DOMContentLoaded", function () {
   const scorePanel = document.getElementById("score-panel");
 
   const map = L.map("pollution-map").setView([40.64, 22.94], 13);
+  setTimeout(() => {
+    map.invalidateSize();
+  }, 200);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "&copy; OpenStreetMap contributors"
   }).addTo(map);
@@ -110,6 +114,8 @@ document.addEventListener("DOMContentLoaded", function () {
     if (selectedDates.length === 1) {
       sliderWrapper.style.display = "none";
       updateMap(selectedDates[0]);
+    } else if (selectedDates.length >= 2 && selectedDates.length <= 4) {
+      updateMap(selectedDates[0]);
     }
   }
 
@@ -142,6 +148,7 @@ document.addEventListener("DOMContentLoaded", function () {
     [...dropdownList.querySelectorAll("input[type='checkbox']")].forEach(cb => cb.checked = false);
     clearMap();
     scorePanel.textContent = "N/A";
+    scorePanel.style.backgroundColor = "";
   });
 
   function updateMap(dateString) {
@@ -187,20 +194,22 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!data.length) {
       scorePanel.textContent = "N/A";
       scorePanel.style.color = "gray";
+      scorePanel.style.backgroundColor = "";
       return;
     }
     const scores = data.map(d => type === "hard" ? d.hard_score : d.soft_score);
     const avg = (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1);
     const num = parseFloat(avg);
+    scorePanel.style.backgroundColor = "";
     if (num >= 8) {
-      scorePanel.classList.add("score-high");
       scorePanel.textContent = "High (" + avg + ")";
+      scorePanel.style.backgroundColor = "#F44336";
     } else if (num >= 4) {
-      scorePanel.classList.add("score-moderate");
       scorePanel.textContent = "Moderate (" + avg + ")";
+      scorePanel.style.backgroundColor = "#FF9800";
     } else {
-      scorePanel.classList.add("score-low");
       scorePanel.textContent = "Low (" + avg + ")";
+      scorePanel.style.backgroundColor = "#4CAF50";
     }
   }
 
