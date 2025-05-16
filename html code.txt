@@ -23,7 +23,7 @@
     <div class="control-group" style="flex: 1 1 200px;">
       <label><strong>Pollution score</strong></label>
       <div id="score-panel" class="score-button" style="padding: 0.4em 1em; font-weight: bold; color: white; border-radius: 5px; text-align: center; min-width: 120px;">N/A</div>
-      <div class="score-legend" style="font-size: 0.9em; color: #666;">Low: 0–3, Moderate: 4–7, High: 8+</div>
+      <div id="score-legend" class="score-legend" style="font-size: 0.9em; color: #666;">Low: 0–3, Moderate: 4–7, High: 8+</div>
     </div>
   </div>
 
@@ -38,8 +38,50 @@
 
 <!-- STYLES -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js">
+  function updateLegend() {
+    const type = document.querySelector('input[name="scoreType"]:checked')?.value;
+    const legend = document.getElementById("score-legend");
+    if (!legend || !type) return;
+    if (type === "hard") {
+      legend.textContent = "Low: score < 2, High: score ≥ 2";
+    } else {
+      legend.textContent = "Low: ≤ 8, Moderate: 8–12, High: > 12";
+    }
+  }
+
+  document.querySelectorAll('input[name="scoreType"]').forEach(r =>
+    r.addEventListener("change", () => {
+      updateLegend();
+      if (selectedDates.length === 1) updateMap(selectedDates[0]);
+    })
+  );
+
+  updateLegend();
+
+</script>
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js">
+  function updateLegend() {
+    const type = document.querySelector('input[name="scoreType"]:checked')?.value;
+    const legend = document.getElementById("score-legend");
+    if (!legend || !type) return;
+    if (type === "hard") {
+      legend.textContent = "Low: score < 2, High: score ≥ 2";
+    } else {
+      legend.textContent = "Low: ≤ 8, Moderate: 8–12, High: > 12";
+    }
+  }
+
+  document.querySelectorAll('input[name="scoreType"]').forEach(r =>
+    r.addEventListener("change", () => {
+      updateLegend();
+      if (selectedDates.length === 1) updateMap(selectedDates[0]);
+    })
+  );
+
+  updateLegend();
+
+</script>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -219,4 +261,25 @@ document.addEventListener("DOMContentLoaded", function () {
     })
   );
 });
+
+  function updateLegend() {
+    const type = document.querySelector('input[name="scoreType"]:checked')?.value;
+    const legend = document.getElementById("score-legend");
+    if (!legend || !type) return;
+    if (type === "hard") {
+      legend.textContent = "Low: score < 2, High: score ≥ 2";
+    } else {
+      legend.textContent = "Low: ≤ 8, Moderate: 8–12, High: > 12";
+    }
+  }
+
+  document.querySelectorAll('input[name="scoreType"]').forEach(r =>
+    r.addEventListener("change", () => {
+      updateLegend();
+      if (selectedDates.length === 1) updateMap(selectedDates[0]);
+    })
+  );
+
+  updateLegend();
+
 </script>
