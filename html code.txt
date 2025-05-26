@@ -10,14 +10,13 @@
 
     <div class="control-group" style="flex: 2 1 300px; position: relative;">
       <label><strong>Select measurement date(s) - up to 4</strong></label>
-      <div id="dropdown-container" style="position: relative;">
+      <div id="dropdown-container" style="position: relative; display: flex; align-items: flex-start; flex-wrap: wrap; gap: 0.5em;">
         <button id="dropdown-toggle" style="width: fit-content; min-width: 160px; padding: 0.6em 1em; height: 38px;">Choose dates ▼</button>
-        <div id="dropdown-list" class="dropdown-list" style="position: absolute; display: none; background: white; border: 1px solid #ccc; min-width: 160px; width: fit-content; max-width: 300px; max-height: 200px; overflow-y: auto; z-index: 9999;"></div>
-      </div>
-      <div style="margin-top: 0.5em; display: flex; gap: 1em;">
-        <button id="compareButton" style="display: none; height: 38px; padding: 0.6em 1em;">Compare</button>
+        <button id="compareButton" style="display: none; height: 38px; padding: 0.6em 1em; border-left: 1px solid #ccc;">Compare</button>
         <button id="resetButton" style="display: none; height: 38px; padding: 0.6em 1em;">Reset</button>
+        <div id="dropdown-list" class="dropdown-list" style="position: absolute; top: 100%; left: 0; background: white; border: 1px solid #ccc; min-width: 160px; width: fit-content; max-width: 300px; max-height: 200px; overflow-y: auto; z-index: 1000;"></div>
       </div>
+      
     </div>
 
     <div class="control-group" style="flex: 1 1 200px;">
