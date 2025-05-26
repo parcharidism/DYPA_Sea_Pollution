@@ -9,14 +9,14 @@
     </div>
 
     <div class="control-group" style="flex: 2 1 300px; position: relative;">
-      <label><strong>Select measurement date(s)</strong></label>
+      <label><strong>Select measurement date(s) - up to 4</strong></label>
       <div id="dropdown-container" style="position: relative;">
-        <button id="dropdown-toggle" style="width: 100%;">Choose dates ▼</button>
-        <div id="dropdown-list" class="dropdown-list" style="position: absolute; display: none; background: white; border: 1px solid #ccc; width: 100%; max-height: 200px; overflow-y: auto; z-index: 9999;"></div>
+        <button id="dropdown-toggle" style="width: fit-content; min-width: 160px; padding: 0.6em 1em; height: 38px;">Choose dates ▼</button>
+        <div id="dropdown-list" class="dropdown-list" style="position: absolute; display: none; background: white; border: 1px solid #ccc; min-width: 160px; width: fit-content; max-width: 300px; max-height: 200px; overflow-y: auto; z-index: 9999;"></div>
       </div>
       <div style="margin-top: 0.5em; display: flex; gap: 1em;">
-        <button id="compareButton" style="display: none;">Compare</button>
-        <button id="resetButton" style="display: none;">Reset</button>
+        <button id="compareButton" style="display: none; height: 38px; padding: 0.6em 1em;">Compare</button>
+        <button id="resetButton" style="display: none; height: 38px; padding: 0.6em 1em;">Reset</button>
       </div>
     </div>
 
@@ -122,19 +122,41 @@ document.addEventListener("DOMContentLoaded", function () {
     dropdownList.style.display = dropdownList.style.display === "block" ? "none" : "block";
   });
 
+  
   function renderDropdown(dates) {
     dropdownList.innerHTML = "";
+    const grouped = {};
+
     dates.forEach(date => {
-      const label = document.createElement("label");
-      const checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      checkbox.value = date;
-      checkbox.addEventListener("change", () => handleCheckboxChange(checkbox));
-      label.appendChild(checkbox);
-      label.appendChild(document.createTextNode(date.replace("-", " / ")));
-      dropdownList.appendChild(label);
+      const [year, month] = date.split("-");
+      if (!grouped[year]) grouped[year] = [];
+      grouped[year].push(date);
+    });
+
+    Object.keys(grouped).sort().forEach(year => {
+      const header = document.createElement("div");
+      header.textContent = year;
+      header.style.fontWeight = "bold";
+      header.style.marginTop = "0.5em";
+      header.style.borderBottom = "1px solid #ccc";
+      dropdownList.appendChild(header);
+
+      grouped[year].forEach(date => {
+        const label = document.createElement("label");
+        label.style.display = "flex";
+      label.style.padding = "0.2em 0 0.2em 0.6em";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.value = date;
+        checkbox.style.marginRight = "0.5em";
+        checkbox.addEventListener("change", () => handleCheckboxChange(checkbox));
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(date.replace("-", " / ")));
+        dropdownList.appendChild(label);
+      });
     });
   }
+
 
   function handleCheckboxChange(checkbox) {
     const value = checkbox.value;
