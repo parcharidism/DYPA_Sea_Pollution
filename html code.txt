@@ -3,6 +3,9 @@
     <div class="control-group" style="flex: 1 1 200px; border-right: 1px solid #ccc; padding-right: 1em; margin-right: 1em;">
       <label><strong>Scoring</strong></label>
       <div class="score-radio">
+      <button id="explainScoreType" style="margin-top: 0.5em; background-color: #f3d1f4; border: none; padding: 0.5em 1em; cursor: pointer; border-radius: 4px;">Explain</button>
+      <div id="scoreExplanation" style="display: none; position: absolute; background: #f3d1f4; box-shadow: 0px 2px 8px rgba(0,0,0,0.15); padding: 0.8em 1em; border-radius: 6px; z-index: 2000; max-width: 250px; font-size: 0.9em; color: #333; top: 100%; left: 0; margin-top: 0.5em;"></div>
+
         <label><input type="radio" name="scoreType" value="soft" checked> Soft</label>
         <label><input type="radio" name="scoreType" value="hard"> Hard</label>
       </div>
@@ -121,7 +124,42 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!dropdownContainer.contains(event.target)) {
       dropdownList.style.display = "none";
     }
+  
+    
+
+  
+  const explainBtn = document.getElementById("explainScoreType");
+  const scoreExplanation = document.getElementById("scoreExplanation");
+
+  explainBtn.addEventListener("click", (event) => {
+    const type = document.querySelector('input[name="scoreType"]:checked').value;
+    if (type === "hard") {
+      scoreExplanation.textContent = "Hard score: Considers only whether key pollutants exceed their thresholds or not. If 2 or more critical values are exceeded, the pollution is classified as high.";
+    } else {
+      scoreExplanation.textContent = "Soft score: Averages all pollutant exceedances. It provides a more sensitive scale of pollution.";
+    }
+
+    const rect = explainBtn.getBoundingClientRect();
+    scoreExplanation.style.left = (rect.left - 260) + "px";
+    scoreExplanation.style.top = (rect.top + window.scrollY) + "px";
+    scoreExplanation.style.display = "block";
   });
+
+  document.addEventListener("click", (e) => {
+    const isInside = e.target.closest("#scoreExplanation") || e.target.id === "explainScoreType";
+    if (!isInside) {
+      scoreExplanation.style.display = "none";
+    }
+  });
+
+
+  document.addEventListener("click", (e) => {
+    const isInside = e.target.closest("#scoreExplanation") || e.target.id === "explainScoreType";
+    if (!isInside) {
+      scoreExplanation.style.display = "none";
+    }
+  });
+});
 });
 
   dropdownToggle.addEventListener("click", () => {
