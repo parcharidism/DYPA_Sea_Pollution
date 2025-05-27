@@ -1,6 +1,6 @@
 <div class="pollution-wrapper" style="max-width: 1000px; margin: auto;">
   <div id="pollution-controls" style="display: flex; flex-wrap: wrap; gap: 1em; align-items: flex-start; margin-bottom: 1em;">
-    <div class="control-group" style="flex: 1 1 200px;">
+    <div class="control-group" style="flex: 1 1 200px; border-right: 1px solid #ccc; padding-right: 1em; margin-right: 1em;">
       <label><strong>Scoring</strong></label>
       <div class="score-radio">
         <label><input type="radio" name="scoreType" value="soft" checked> Soft</label>
@@ -8,13 +8,13 @@
       </div>
     </div>
 
-    <div class="control-group" style="flex: 2 1 300px; position: relative;">
+    <div class="control-group" style="flex: 2 1 300px; position: relative; border-right: 1px solid #ccc; padding-right: 1em; margin-right: 1em;">
       <label><strong>Select measurement date(s) - up to 4</strong></label>
       <div id="dropdown-container" style="position: relative; display: flex; align-items: flex-start; flex-wrap: wrap; gap: 0.5em;">
         <button id="dropdown-toggle" style="width: fit-content; min-width: 160px; padding: 0.6em 1em; height: 38px;">Choose dates ▼</button>
         <button id="compareButton" style="display: none; height: 38px; padding: 0.6em 1em; border-left: 1px solid #ccc;">Compare</button>
         <button id="resetButton" style="display: none; height: 38px; padding: 0.6em 1em;">Reset</button>
-        <div id="dropdown-list" class="dropdown-list" style="position: absolute; top: 100%; left: 0; background: white; border: 1px solid #ccc; min-width: 160px; width: fit-content; max-width: 300px; max-height: 200px; overflow-y: auto; z-index: 1000;"></div>
+        <div id="dropdown-list" class="dropdown-list" style="display: none; position: absolute; top: 100%; left: 0; background: white; border: 1px solid #ccc; min-width: 160px; width: fit-content; max-width: 300px; max-height: 200px; overflow-y: auto; z-index: 1000;"></div>
       </div>
       
     </div>
@@ -114,7 +114,7 @@ document.addEventListener("DOMContentLoaded", function () {
       allData = data;
       const dates = [...new Set(data.map(d => d.year + "-" + String(d.month).padStart(2, '0')))].sort();
       renderDropdown(dates);
-      updateMap(dates[0]);
+      // updateMap(dates[0]);  // Removed to prevent default data load
     
   document.addEventListener("click", function (event) {
     const dropdownContainer = document.getElementById("dropdown-container");
@@ -190,6 +190,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   compareBtn.addEventListener("click", () => {
+    dropdownList.style.display = "none";
+
     sliderWrapper.style.display = "block";
     slider.max = selectedDates.length - 1;
     slider.value = 0;
