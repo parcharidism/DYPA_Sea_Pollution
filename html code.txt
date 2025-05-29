@@ -111,7 +111,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let heatLayer;
   window.markers = [];
 
-  fetch("http://172.16.64.205:8080/wp-content/uploads/2025/04/pollution_scores.json")
+  fetch("/wp-content/uploads/pollution_scores.json")
     .then(res => res.json())
     .then(data => {
       allData = data;
