@@ -176,7 +176,7 @@ public class PollutionScoringJson {
         }
 
         JSONArray outputArray = new JSONArray(results);
-        try (FileWriter file = new FileWriter("pollution_scores.json")) {
+        try (FileWriter file = new FileWriter("/app/output/wp-content/uploads/pollution_scores.json")) {
             file.write(outputArray.toString(2));
             System.out.println("pollution_scores.json written successfully.");
             System.out.println("Total rows exported: " + results.size());
