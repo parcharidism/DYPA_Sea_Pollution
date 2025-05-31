@@ -1,3 +1,9 @@
+## Project Overview
+
+This application focuses on mapping marine pollution in the Thermaikos Gulf, specifically in the area in front of Thessaloniki. It utilizes open data from the Port of Thessaloniki Authority (Ο.Λ.Θ.), based on measurements taken at the piers and outside the port basin near the central breakwater. Pollution is visualized through a heatmap, where higher pollution levels are displayed with more intense color. Two different formulas are used to calculate pollution scores based on measurements of physicochemical parameters. Each score falls into one of three categories: Low, Moderate, or High, as determined by bibliographic research. 
+
+The added value of the application lies in the fact that it does not merely display raw data, but processes it to draw conclusions about pollution levels. Additionally, the user can select up to four measurement dates to compare results over time, displayed simultaneously on the map using a slider.
+
 # Environmental Pollution Scoring Platform
 
 This project runs on a minimal Ubuntu headless server and provides a web interface for visualizing marine pollution scores based on metal concentration thresholds. It combines three Docker containers: WordPress, MySQL, and a custom Java-based processing service.
